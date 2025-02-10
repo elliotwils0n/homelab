@@ -1,0 +1,68 @@
+loki:
+  auth_enabled: false
+  server:
+    http_listen_port: 3100
+    grpc_listen_port: 9095
+  commonConfig:
+    instance_addr: 127.0.0.1
+    path_prefix: /var/loki
+    replication_factor: 1
+    storage:
+      filesystem:
+        chunks_directory: /var/loki/chunks
+        rules_directory: /var/loki/rules 
+    ring:
+      kvstore:
+        store: inmemory
+  storage:
+    type: filesystem
+  analytics:
+    reporting_enabled: false
+  useTestSchema: true
+  ui:
+    enabled: false
+
+deploymentMode: SingleBinary
+singleBinary:
+  replicas: 1
+  persistence:
+    enableStatefulSetAutoDeletePVC: false
+    size: 1Gi
+    storageClass: local-path
+
+chunksCache:
+  enabled: false
+resultsCache:
+  enabled: false
+gateway:
+  enabled: false
+lokiCanary:
+  enabled: false
+test:
+  enabled: false
+
+backend:
+  replicas: 0
+read:
+  replicas: 0
+write:
+  replicas: 0
+
+ingester:
+  replicas: 0
+querier:
+  replicas: 0
+queryFrontend:
+  replicas: 0
+queryScheduler:
+  replicas: 0
+distributor:
+  replicas: 0
+compactor:
+  replicas: 0
+indexGateway:
+  replicas: 0
+bloomCompactor:
+  replicas: 0
+bloomGateway:
+  replicas: 0

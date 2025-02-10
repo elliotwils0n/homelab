@@ -1,0 +1,4 @@
+resources:
+- services/istio.yaml
+- services/istio-ingress.yaml
+- services/alloy.yaml

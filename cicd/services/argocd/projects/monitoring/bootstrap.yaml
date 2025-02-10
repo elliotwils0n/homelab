@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: monitoring-bootstrap
+  namespace: argocd
+spec:
+  destination:
+    name: "in-cluster"
+    namespace: monitoring-project
+  sources:
+    - path: monitoring/bootstrap/
+      repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      #repoURL: 'https://gitlab.home.arpa/homelab/homelab.git'
+      targetRevision: master
+  project: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

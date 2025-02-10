@@ -1,0 +1,21 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: example-bootstrap
+  namespace: argocd
+spec:
+  destination:
+    name: in-cluster
+    namespace: example-project
+  sources:
+    - path: worker/bootstrap/
+      repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      targetRevision: master
+    - path: bootstrap/
+      repoURL: 'https://forgejo.home.arpa/example/gitops.git'
+      targetRevision: master
+  project: example
+  #syncPolicy:
+  #  automated:
+  #    prune: true
+  #    selfHeal: true

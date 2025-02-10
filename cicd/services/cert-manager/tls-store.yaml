@@ -1,0 +1,9 @@
+# https://doc.traefik.io/traefik/reference/routing-configuration/kubernetes/crd/tls/tlsstore/
+apiVersion: traefik.io/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: traefik
+spec:
+  defaultCertificate:
+    secretName: home-arpa-tls

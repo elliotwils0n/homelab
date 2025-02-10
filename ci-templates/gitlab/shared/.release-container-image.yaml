@@ -1,0 +1,16 @@
+release-container-image:
+  stage: release
+  image: docker:28.5.2-cli
+  needs:
+    - job: build-application
+      artifacts: true
+  rules:
+    - exists: "Dockerfile"
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker image build -t "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}" .
+    - docker image push "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+    - docker image rm "${CI_REGISTRY_IMAGE}:${CI_COMMIT_TAG}"
+  after_script:
+    - docker logout "$CI_REGISTRY"

@@ -1,0 +1,15 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: keycloak-ingress
+  namespace: keycloak
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`keycloak.home.arpa`)
+      kind: Rule
+      services:
+        - name: keycloak-headless
+          port: 8080

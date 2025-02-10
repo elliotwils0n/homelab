@@ -1,0 +1,96 @@
+spec:
+  inputs:
+    build-image: {}
+    golangci-image: {}
+    target-os: {}
+    target-arch: {}
+    target-cgo-enabled: {}
+    application-path: {}
+    gitops-repository: {}
+---
+stages:
+  - dependencies
+  - quality-control
+  - build
+  - release
+  - gitops
+
+.golang-defaults:
+  image: $[[ inputs.build-image ]]
+
+.golang-cache:
+  extends: .golang-defaults
+  variables:
+    GOPATH: "${CI_PROJECT_DIR}/.cache"
+  cache:
+    key:
+      files:
+        - go.mod
+        - go.sum
+    paths:
+      - .cache
+
+download-dependencies:
+  stage: dependencies
+  extends: .golang-cache
+  script:
+    - go mod download
+
+check:
+  stage: quality-control
+  extends: .golang-cache
+  script:
+    - go build ./...
+
+test:
+  stage: quality-control
+  extends: .golang-cache
+  needs: [check]
+  script:
+    - go test ./...
+
+format:
+  stage: quality-control
+  extends: .golang-defaults
+  needs: [check]
+  script:
+    - test -z "$(gofmt -l .)"
+
+lint:
+  stage: quality-control
+  image: $[[ inputs.golangci-image ]]
+  needs: [check]
+  allow_failure: true
+  script:
+    - golangci-lint run ./...
+
+build-application:
+  stage: build
+  extends: [.golang-cache]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+  variables:
+    GOOS: $[[ inputs.target-os ]]
+    GOARCH: $[[ inputs.target-arch ]]
+    CGO_ENABLED: $[[ inputs.target-cgo-enabled ]]
+  script:
+    - go build -o $CI_PROJECT_NAME.out $[[ inputs.application-path ]]
+  artifacts:
+    expire_in: 1h
+    paths:
+      - $CI_PROJECT_NAME.out
+
+include:
+  - local: '/shared/.release-container-image.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+  - local: '/shared/.release-helm-package.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+    inputs:
+      gitops-repository: $[[ inputs.gitops-repository ]]
+  - local: '/shared/.trigger-gitops-pipeline.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+    inputs:
+      gitops-repository: $[[ inputs.gitops-repository ]]

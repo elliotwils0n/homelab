@@ -1,0 +1,4 @@
+resources:
+  - project.yaml
+  - bootstrap.yaml
+  - repository-secret.yaml

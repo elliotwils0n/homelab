@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: alloy
+spec:
+  destination:
+    name: 'example-cluster'
+    namespace: monitoring
+  project: example
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  sources:
+    - repoURL: 'https://grafana.github.io/helm-charts'
+      targetRevision: 1.2.1
+      chart: alloy
+      helm:
+        valueFiles:
+          - $values/worker/services/alloy/values.yaml
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      ref: values
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      path: worker/services/alloy/

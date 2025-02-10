@@ -1,0 +1,12 @@
+spec:
+  inputs:
+    gitops-repository: {}
+    build-target:
+      default: "x86_64-unknown-linux-musl"
+---
+include:
+  - local: '/rust/.app.yaml'
+    inputs:
+      build-image: rust:1.92.0-alpine
+      build-target: $[[ inputs.build-target ]]
+      gitops-repository: $[[ inputs.gitops-repository ]]

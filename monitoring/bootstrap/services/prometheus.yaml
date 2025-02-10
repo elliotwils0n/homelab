@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: monitoring-project
+spec:
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  project: monitoring
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  sources:
+    - repoURL: 'https://prometheus-community.github.io/helm-charts'
+      targetRevision: 27.44.1
+      chart: prometheus
+      helm:
+        valueFiles:
+          - $values/monitoring/services/prometheus/values.yaml
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+    #- repoURL: 'https://gitlab.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      ref: values
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+    #- repoURL: 'https://gitlab.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      path: monitoring/services/prometheus/

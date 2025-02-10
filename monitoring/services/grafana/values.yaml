@@ -1,0 +1,91 @@
+admin:
+  existingSecret: "grafana-admin-credentials-secret"
+  userKey: admin-username
+  passwordKey: admin-password
+
+envFromSecrets:
+  - name: grafana-oidc-secret
+
+grafana.ini:
+    analytics:
+      reporting_enabled: false
+    server:
+      root_url: "https://grafana.home.arpa"
+    auth:
+      disable_login_form: false
+      disable_signout_menu: false
+    auth.anonymous:
+      enabled: true
+      org_role: Viewer
+    auth.generic_oauth:
+      enabled: true
+      name: Keycloak
+      role_attribute_path: "contains(groups[*], '/admin') && 'Admin' || contains(groups[*], '/developer') && 'Editor' || 'Viewer'"
+      allow_sign_up: true
+      client_id: "grafana"
+      scopes: "openid profile email groups"
+      auth_url: "https://keycloak.home.arpa/realms/homelab/protocol/openid-connect/auth"
+      token_url: "https://keycloak.home.arpa/realms/homelab/protocol/openid-connect/token"
+      api_url: "https://keycloak.home.arpa/realms/homelab/protocol/openid-connect/userinfo"
+      tls_skip_verify_insecure: true
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus
+      type: prometheus
+      uid: prometheus
+      access: proxy
+      orgId: 1
+      #url: http://prometheus.monitoring.svc.cluster.local:9090
+      url: https://prometheus.home.arpa
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: false
+      jsonData:
+        httpMethod: GET
+        tlsSkipVerify: true
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      access: proxy
+      orgId: 1
+      #url: http://tempo.monitoring.svc.cluster.local:3200
+      url: https://tempo.home.arpa
+      basicAuth: false
+      isDefault: true
+      version: 1
+      editable: false
+      jsonData:
+        tlsSkipVerify: true
+        tracesToLogsV2:
+          datasourceUid: 'loki'
+          spanStartTimeShift: "-10m"
+          spanEndTimeShift: "10m"
+          filterByTraceID: true
+          filterBySpanID: false
+          customQuery: false
+    - name: Loki
+      type: loki
+      uid: loki
+      access: proxy
+      orgId: 1
+      #url: http://loki.monitoring.svc.cluster.local:3100
+      url: https://loki.home.arpa
+      basicAuth: false
+      isDefault: false
+      version: 1
+      editable: false
+      jsonData:
+        tlsSkipVerify: true
+        timeout: 60
+        maxLines: 1000
+        derivedFields:
+          - datasourceUid: tempo
+            name: TraceID
+            matcherType: regex
+            matcherRegex: 'trace_id=(\w+)'
+            url: '$${__value.raw}'
+            urlDisplayLabel: 'View Trace'

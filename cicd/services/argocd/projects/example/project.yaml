@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: example-project
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: example
+  namespace: argocd
+spec:
+  description: example
+  sourceNamespaces:
+    - example-project
+  sourceRepos:
+    - "https://forgejo.home.arpa/homelab/homelab.git"
+    - "https://forgejo.home.arpa/example/gitops.git"
+    - "*"
+  destinations:
+    - namespace: "*"
+      name: ""
+      server: "https://192.168.0.211:6443"
+    - namespace: example-project
+      name: "in-cluster"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

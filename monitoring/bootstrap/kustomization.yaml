@@ -1,0 +1,5 @@
+resources:
+  - services/grafana.yaml
+  - services/loki.yaml
+  - services/tempo.yaml
+  - services/prometheus.yaml

@@ -1,0 +1,9 @@
+spec:
+  inputs:
+    gitops-repository: {}
+---
+include:
+  - local: '/java-mvn/.app.yaml'
+    inputs:
+      build-image: maven:3.9.12-eclipse-temurin-25-alpine
+      gitops-repository: $[[ inputs.gitops-repository ]]

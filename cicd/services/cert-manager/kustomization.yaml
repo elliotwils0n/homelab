@@ -1,0 +1,5 @@
+resources:
+  - cluster-issuer.yaml
+  - traefik-ns.yaml
+  - certificate.yaml
+  - tls-store.yaml

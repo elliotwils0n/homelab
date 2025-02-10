@@ -1,0 +1,4 @@
+resources:
+  - admin-credentials-secret.yaml
+  - grafana-oidc-secret.yaml
+  - ingress-route.yaml

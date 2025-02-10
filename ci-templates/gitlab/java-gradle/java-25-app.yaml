@@ -1,0 +1,9 @@
+spec:
+  inputs:
+    gitops-repository: {}
+---
+include:
+  - local: '/java-gradle/.app.yaml'
+    inputs:
+      build-image: gradle:9.2.1-jdk25-alpine
+      gitops-repository: $[[ inputs.gitops-repository ]]

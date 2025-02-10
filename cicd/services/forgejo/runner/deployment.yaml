@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: forgejo-runner
+  namespace: forgejo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: forgejo-runner
+  template:
+    metadata:
+      labels:
+        app: forgejo-runner
+    spec:
+      securityContext:
+        runAsUser: 0
+      containers:
+        - name: forgejo-runner
+          image: data.forgejo.org/forgejo/runner:12
+          command: ["/bin/bash", "-c", "/config/entrypoint.sh"]
+          env:
+            - name: FORGEJO_RUNNER_INSTANCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-secret
+                  key: FORGEJO_RUNNER_INSTANCE_URL
+            - name: FORGEJO_RUNNER_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-runner-secret
+                  key: FORGEJO_RUNNER_REGISTRATION_TOKEN
+            - name: FORGEJO__RUNNER__INSECURE
+              value: "true"
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
+            - name: docker-certs
+              mountPath: /etc/docker/certs.d
+            - name: forgejo-config
+              mountPath: "/config"
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
+        - name: docker-certs
+          hostPath:
+            path: /etc/docker/certs.d
+            type: DirectoryOrCreate
+        - name: forgejo-config
+          configMap:
+            defaultMode: 0555
+            name: forgejo-config
+            items:
+            - key: "entrypoint.sh"
+              path: "entrypoint.sh"
+            - key: "config.yaml"
+              path: "config.yaml"

@@ -1,0 +1,232 @@
+#apiVersion: v1
+#kind: Namespace
+#metadata:
+#  name: gitlab
+#---
+#apiVersion: v1
+#kind: Secret
+#stringData:
+#  password: changeme
+#metadata:
+#  name: gitlab-postgres-secret
+#  namespace: gitlab
+#type: Opaque
+#---
+#apiVersion: v1
+#kind: Secret
+#stringData:
+#  password: changeme
+#metadata:
+#  name: gitlab-redis-secret
+#  namespace: gitlab
+#type: Opaque
+#---
+#apiVersion: v1
+#kind: Secret
+#stringData:
+#  provider: |
+#    name: openid_connect
+#    label: Keycloak
+#    args:
+#      name: openid_connect
+#      scope: ["openid", "profile", "email"]
+#      response_type: code
+#      issuer:  https://keycloak.home.arpa/realms/homelab
+#      client_auth_method: query
+#      discovery: true
+#      uid_field: preferred_username
+#      pkce: true,
+#      client_options:
+#        identifier: gitlab
+#        secret: changeme
+#        redirect_uri: 'https://gitlab.home.arpa/users/auth/openid_connect/callback'
+#metadata:
+#  name: gitlab-keycloak-auth-provider-secret-secret
+#  namespace: gitlab
+#type: Opaque
+#---
+#apiVersion: v1
+#kind: Secret
+#stringData:
+#  config: |
+#    s3:
+#      v4auth: true
+#      regionendpoint: "http://minio.storage.svc.cluster.local:9000"
+#      pathstyle: true
+#      region: us-east-1
+#      bucket: gitlab-registry
+#      accesskey: gitlab
+#      secretkey: changeme
+#    redirect:
+#      disable: true
+#metadata:
+#  name: gitlab-registry-storage-secret
+#  namespace: gitlab
+#type: Opaque
+#---
+#apiVersion: v1
+#kind: Secret
+#stringData:
+#  connection: |
+#    provider: AWS
+#    region: us-east-1
+#    aws_access_key_id: gitlab
+#    aws_secret_access_key: changeme
+#    aws_signature_version: 4
+#    host: minio.storage.svc.cluster.local:9000
+#    endpoint: "http://minio.storage.svc.cluster.local:9000"
+#    path_style: true
+#metadata:
+#  name: gitlab-object-storage-secret
+#  namespace: gitlab
+#type: Opaque
+#---
+#apiVersion: helm.cattle.io/v1
+#kind: HelmChart
+#metadata:
+#  name: gitlab
+#  namespace: gitlab
+#spec:
+#  repo: https://charts.gitlab.io/
+#  chart: gitlab
+#  targetNamespace: gitlab
+#  version: 9.6.2
+#  valuesContent: |-
+#    global:
+#      edition: ce
+#      hosts:
+#        domain: home.arpa
+#        https: false
+#      ingress:
+#        configureCertmanager: false
+#        enabled: false
+#      monitoring:
+#        enabled: false
+#      rails:
+#        bootsnap:
+#          enabled: false
+#      psql:
+#        host: postgres.storage.svc.cluster.local
+#        database: gitlab
+#        username: gitlab
+#        password:
+#          useSecret: true
+#          secret: gitlab-postgres-secret
+#          key: password
+#      praefect:
+#        enabled: false
+#      minio:
+#        enabled: false
+#      redis:
+#        auth:
+#          secret: gitlab-redis-secret
+#          key: password
+#        host: redis-headless.storage.svc.cluster.local
+#        database: 1 # ArgoCD is using 0
+#      appConfig:
+#        omniauth:
+#          enabled: true
+#          block_auto_created_users: false
+#          providers:
+#            - secret: gitlab-keycloak-auth-provider-secret-secret
+#              key: provider
+#        object_store:
+#          connection:
+#            secret: gitlab-object-storage-secret
+#          enabled: true
+#        artifacts:
+#          bucket: gitlab-artifacts
+#        backups:
+#          bucket: gitlab-backups
+#          tmpBucket: gitlab-tmp
+#        ciSecureFiles:
+#          bucket: gitlab-ci-secure-files
+#        dependencyProxy:
+#          bucket: gitlab-dependency-proxy
+#        externalDiffs:
+#          bucket: gitlab-external-diffs
+#        lfs:
+#          bucket: gitlab-lfs
+#        packages:
+#          bucket: gitlab-packages
+#        terraformState:
+#          bucket: gitlab-terraform-state
+#        uploads:
+#          bucket: gitlab-uploads
+#        registry:
+#          bucket: gitlab-registry
+#      pages:
+#        enabled: false
+#        objectStore:
+#          enabled: false
+#          bucket: gitlab-pages
+#          connection:
+#            secret: gitlab-object-storage-secret
+#    installCertmanager: false
+#    nginx-ingress:
+#      enabled: false
+#    nginx-ingress-geo:
+#      enabled: false
+#    haproxy:
+#      install: false
+#    prometheus:
+#      install: false
+#    redis:
+#      install: false
+#    postgresql:
+#      install: false
+#    gitlab-runner:
+#      install: true
+#      runners:
+#        config: |
+#          [[runners]]
+#            [runners.kubernetes]
+#            image = "ubuntu:22.04"
+#            [[runners.kubernetes.volumes.host_path]]
+#              name = "docker"
+#              host_path = "/var/run/docker.sock"
+#              mount_path = "/var/run/docker.sock"
+#              read_only = false
+#            [runners.cache]
+#              Type = "s3"
+#              Path = ""
+#              Shared = true
+#              [runners.cache.s3]
+#                ServerAddress = "minio.storage.svc.cluster.local:9000"
+#                AccessKey = "gitlab"
+#                SecretKey = "changeme"
+#                BucketName = "gitlab-runners-cache"
+#                BucketLocation = "us-east-1"
+#                Insecure = true
+#    traefik:
+#      install: false
+#    gitlab-zoekt:
+#      install: false
+#    openbao:
+#      install: false
+#    gitlab:
+#      webservice:
+#        minReplicas: 1
+#        maxReplicas: 1
+#      sidekiq:
+#        minReplicas: 1
+#        maxReplicas: 1
+#      gitlab-shell:
+#        minReplicas: 1
+#        maxReplicas: 1
+#      toolbox:
+#        backups:
+#          objectStorage:
+#            # todo: this is invalid
+#            # https://gitlab.com/gitlab-org/charts/gitlab/-/blob/master/examples/values-external-objectstorage.yaml
+#            # https://gitlab.com/gitlab-org/charts/gitlab/tree/master/doc/advanced/external-object-storage#backups-storage-example
+#            config:
+#              secret: gitlab-object-storage-secret
+#              key: connection
+#    registry:
+#      hpa:
+#        minReplicas: 1
+#        maxReplicas: 1
+#      storage:
+#        secret: gitlab-registry-storage-secret
+#        key: config

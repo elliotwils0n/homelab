@@ -1,0 +1,89 @@
+spec:
+  inputs:
+    build-image: {}
+    gitops-repository: {}
+---
+stages:
+  - dependencies
+  - quality-control
+  - build
+  - release
+  - gitops
+
+.maven-defaults:
+  image: $[[ inputs.build-image ]]
+
+.maven-cache:
+  extends: .maven-defaults
+  variables:
+    MAVEN_OPTS: "-Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository"
+  cache:
+    key:
+      files:
+        - pom.xml
+    paths:
+      - .m2
+
+download-dependencies:
+  stage: dependencies
+  extends: .maven-cache
+  script:
+    - mvn -B dependency:go-offline
+
+check:
+  stage: quality-control
+  extends: .maven-cache
+  script:
+    - mvn compile
+
+test:
+  stage: quality-control
+  extends: .maven-cache
+  needs: [check]
+  script:
+    - mvn test
+
+format:
+  stage: quality-control
+  extends: .maven-defaults
+  needs: [check]
+  allow_failure: true
+  script:
+    - echo "Not configured"
+    - exit 1
+
+lint:
+  stage: quality-control
+  extends: .maven-defaults
+  needs: [check]
+  allow_failure: true
+  script:
+    - echo "Not configured"
+    - exit 1
+
+build-application:
+  stage: build
+  extends: [.maven-cache]
+  rules:
+    - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+  script:
+    - mvn package -DskipTests
+  artifacts:
+    expire_in: 1h
+    paths:
+      - target/*.jar
+
+include:
+  - local: '/shared/.release-container-image.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+  - local: '/shared/.release-helm-package.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+    inputs:
+      gitops-repository: $[[ inputs.gitops-repository ]]
+  - local: '/shared/.trigger-gitops-pipeline.yaml'
+    rules:
+      - if: $CI_COMMIT_TAG =~ /[0-9]+\.[0-9]+\.[0-9]+/
+    inputs:
+      gitops-repository: $[[ inputs.gitops-repository ]]

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: forgejo-config
+data:
+  entrypoint.sh: |
+    forgejo-runner register \
+      --no-interactive \
+      --name $HOSTNAME \
+      --token $FORGEJO_RUNNER_REGISTRATION_TOKEN \
+      --instance $FORGEJO_RUNNER_INSTANCE_URL \
+      --config /config/config.yaml \
+      --labels docker,ubuntu-latest
+    forgejo-runner daemon --config /config/config.yaml
+  config.yaml: |
+    runner:
+      insecure: true

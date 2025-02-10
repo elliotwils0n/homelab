@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: gitlab-config
+  namespace: argocd
+spec:
+  destination:
+    name: in-cluster
+    namespace: gitlab
+  sources:
+    - path: cicd/services/gitlab/
+      repoURL: http://forgejo-http.forgejo.svc.cluster.local:3000/homelab/homelab.git
+      #repoURL: http://gitlab-webservice-default.gitlab.svc.cluster.local:8181/homelab/homelab.git
+      targetRevision: master
+  project: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

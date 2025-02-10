@@ -1,0 +1,7 @@
+resources:
+  - services/cert-manager-config.yaml
+  - services/minio-config.yaml
+  - services/keycloak-config.yaml
+  - services/forgejo-config.yaml
+  #- services/gitlab-config.yaml
+  - services/argo-config.yaml

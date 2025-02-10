@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: gitlab-ingress
+  namespace: gitlab
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`gitlab.home.arpa`)
+      kind: Rule
+      services:
+        - name: gitlab-webservice-default
+          port: 8181
+    - match: Host(`registry.home.arpa`)
+      kind: Rule
+      services:
+        - name: gitlab-registry
+          port: 5000

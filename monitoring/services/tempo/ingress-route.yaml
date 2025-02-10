@@ -1,0 +1,20 @@
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: tempo-ingress
+  namespace: monitoring
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+    - match: Host(`tempo.home.arpa`)
+      kind: Rule
+      services:
+        - name: tempo
+          port: 3200
+    - match: Host(`tempo-otlp.home.arpa`)
+      kind: Rule
+      services:
+        - name: tempo
+          port: 4318

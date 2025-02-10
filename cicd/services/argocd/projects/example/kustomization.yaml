@@ -1,0 +1,6 @@
+resources:
+- cluster-secret.yaml
+- project.yaml
+- git-repository-secret.yaml
+- helm-repository-secret.yaml
+- bootstrap.yaml

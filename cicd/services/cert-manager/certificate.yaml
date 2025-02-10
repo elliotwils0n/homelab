@@ -1,0 +1,22 @@
+# https://cert-manager.io/docs/usage/certificate/
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: home-arpa-cert
+  namespace: traefik
+spec:
+  isCA: false
+  subject:
+    organizations:
+      - '*.home.arpa'
+  dnsNames:
+    - '*.home.arpa'
+  commonName: '*.home.arpa'
+  secretName: home-arpa-tls
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: ca-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io

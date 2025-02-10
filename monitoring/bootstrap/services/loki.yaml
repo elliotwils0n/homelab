@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: monitoring-project
+spec:
+  destination:
+    name: in-cluster
+    namespace: monitoring
+  project: monitoring
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  sources:
+    - repoURL: 'https://grafana.github.io/helm-charts'
+      targetRevision: 6.46.0
+      chart: loki
+      helm:
+        valueFiles:
+          - $values/monitoring/services/loki/values.yaml
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+    #- repoURL: 'https://gitlab.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      ref: values
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+    #- repoURL: 'https://gitlab.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      path: monitoring/services/loki/

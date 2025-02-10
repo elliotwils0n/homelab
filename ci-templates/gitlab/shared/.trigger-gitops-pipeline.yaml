@@ -1,0 +1,31 @@
+spec:
+  inputs:
+    gitops-repository: {}
+---
+.trigger-gitops-pipeline:
+  stage: gitops
+  variables:
+    APPLICATION_NAME: $CI_PROJECT_NAME
+    APPLICATION_VERSION: $CI_COMMIT_TAG
+  trigger:
+    project: '$[[ inputs.gitops-repository ]]'
+    forward:
+      pipeline_variables: true
+
+trigger-gitops-pipeline:
+  extends: [.trigger-gitops-pipeline]
+  rules:
+    - exists: "charts/${CI_PROJECT_NAME}/"
+      when: on_success
+    - when: never
+  variables:
+    APPLICATION_VERSION_TARGET: HELM
+
+trigger-gitops-pipeline:
+  extends: [.trigger-gitops-pipeline]
+  rules:
+    - exists: "charts/${CI_PROJECT_NAME}/"
+      when: never
+    - when: on_success
+  variables:
+    APPLICATION_VERSION_TARGET: IMAGE

@@ -1,0 +1,169 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 4Gi
+---
+apiVersion: v1
+kind: Secret
+stringData:
+  password: changeme
+metadata:
+  name: postgres-secret
+  namespace: storage
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+stringData:
+  password: changeme
+metadata:
+  name: forgejo-user-secret
+  namespace: storage
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+stringData:
+  password: changeme
+metadata:
+  name: gitlab-user-secret
+  namespace: storage
+type: Opaque
+---
+apiVersion: v1
+kind: Secret
+stringData:
+  password: changeme
+metadata:
+  name: keycloak-user-secret
+  namespace: storage
+type: Opaque
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-db
+  namespace: storage
+data:
+  init-db.sh: |
+    #!/bin/bash
+    set -e
+    psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    create user "forgejo" with password '${FORGEJO_USER_PASSWORD}';
+    create database forgejo;
+    grant all privileges on database forgejo to "forgejo";
+
+    create user "keycloak" with password '${KEYCLOAK_USER_PASSWORD}';
+    create database keycloak;
+    grant all privileges on database keycloak to "keycloak";
+
+    create user "gitlab" with password '${GITLAB_USER_PASSWORD}';
+    create database gitlab;
+    grant all privileges on database gitlab to "gitlab";
+
+    \connect forgejo;
+    grant usage, create on schema public to "forgejo";
+
+    \connect keycloak;
+    grant usage, create on schema public to "keycloak";
+
+    \connect gitlab;
+    grant usage, create on schema public to "gitlab";
+    EOSQL
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: postgres
+  namespace: storage
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16.2-alpine3.19
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: POSTGRES_DB
+              value: "postgres"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: password
+            - name: FORGEJO_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: forgejo-user-secret
+                  key: password
+            - name: KEYCLOAK_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-user-secret
+                  key: password
+            - name: GITLAB_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: gitlab-user-secret
+                  key: password
+          ports:
+            - name: tcp
+              containerPort: 5432
+              protocol: TCP
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+              readOnly: false
+            - name: init-db
+              subPath: init-db.sh
+              mountPath: /docker-entrypoint-initdb.d/init-db.sh
+              readOnly: true
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+        - name: init-db
+          configMap:
+            name: postgres-init-db
+            defaultMode: 0755
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: storage
+  labels:
+    app: postgres
+spec:
+  clusterIP: None
+  ports:
+    - port: 5432
+      targetPort: 5432
+      protocol: TCP
+      name: tcp
+  selector:
+    app: postgres

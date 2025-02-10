@@ -1,0 +1,11 @@
+service:
+  type: NodePort
+  ports:
+    - name: http-public
+      port: 80
+      targetPort: 80
+      nodePort: 30080
+    - name: https-public
+      port: 443
+      targetPort: 443
+      nodePort: 30443

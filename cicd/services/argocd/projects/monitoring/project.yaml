@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring-project
+---
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: monitoring
+  namespace: argocd
+spec:
+  description: monitoring
+  sourceNamespaces:
+    - monitoring-project
+  sourceRepos:
+    - "https://forgejo.home.arpa/homelab/homelab.git"
+    #- "https://gitlab.home.arpa/homelab/homelab.git"
+    - "*"
+  destinations:
+    - namespace: "*"
+      name: "in-cluster"
+    - namespace: monitoring-project
+      name: "in-cluster"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

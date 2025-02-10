@@ -1,0 +1,21 @@
+spec:
+  inputs:
+    target-os:
+      default: linux
+    target-arch:
+      default: amd64
+    target-cgo-enabled:
+      default: "0"
+    application-path: {}
+    gitops-repository: {}
+---
+include:
+  - local: '/golang/.app.yaml'
+    inputs:
+      build-image: golang:1.25-alpine
+      golangci-image: golangci/golangci-lint:v2.7.2-alpine
+      target-os: $[[ inputs.target-os ]]
+      target-arch: $[[ inputs.target-arch ]]
+      target-cgo-enabled: $[[ inputs.target-cgo-enabled ]]
+      application-path: $[[ inputs.application-path ]]
+      gitops-repository: $[[ inputs.gitops-repository ]]

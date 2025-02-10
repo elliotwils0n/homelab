@@ -1,0 +1,12 @@
+# https://istio.io/latest/docs/tasks/observability/distributed-tracing/opentelemetry/
+# https://istio.io/latest/docs/reference/config/istio.mesh.v1alpha1/#MeshConfig-ExtensionProvider-OpenTelemetryTracingProvider
+meshConfig:
+  enablePrometheusMerge: true
+  enableTracing: true
+  extensionProviders:
+    - name: alloy-collector
+      opentelemetry:
+        service: alloy.monitoring.svc.cluster.local
+        port: 4317
+        resourceDetectors:
+          environment: {}

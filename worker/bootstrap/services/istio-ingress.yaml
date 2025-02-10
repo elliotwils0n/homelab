@@ -1,0 +1,25 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: istio-ingress
+spec:
+  destination:
+    name: 'example-cluster'
+    namespace: istio-ingress
+  project: example
+  syncPolicy:
+    syncOptions:
+      - CreateNamespace=true
+  sources:
+    - repoURL: 'https://istio-release.storage.googleapis.com/charts'
+      targetRevision: 1.27.1
+      chart: gateway
+      helm:
+        valueFiles:
+          - $values/worker/services/istio-ingress/values.yaml
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      ref: values
+    - repoURL: 'https://forgejo.home.arpa/homelab/homelab.git'
+      targetRevision: master
+      path: worker/services/istio-ingress/
